@@ -4,18 +4,22 @@ import json
 from A202.settings import message_queue
 from balls.serializers import LocationSerializer, RouteSerializer
 from devices.models import Device
+from django.shortcuts import get_list_or_404, get_object_or_404
+from accounts.models import User
 
 Device_List = list(Device.objects.values_list('serial_num', flat=True))
 client_sockets = []  
+
 def handle_client(client_sock, client_addr, client_sockets):
     try:
         while True:
-            print(message_queue)
+            # print(message_queue)
             data = client_sock.recv(1024)
             if data == b'exit':
                 break
             received_data = data.decode("utf-8")
-            print(message_queue.get())
+            print(received_data)
+            # print(message_queue.get())
             json_info = json.loads(received_data)
             # print(f'Received from {client_addr}: {received_data}')
 
@@ -23,25 +27,46 @@ def handle_client(client_sock, client_addr, client_sockets):
             try:
                 device_info = json_info["device_info"]
                 num_of_frames_info = json_info["num_of_frames"]
+
+                if num_of_frames_info != '1':
+                    print('공 좌표')
+                    if device_info in Device_List:
+                        print('저장완료')
+                        loca_serializer = LocationSerializer(loca_file=json_info, is_quiz=0)
+                        if loca_serializer.is_valid(raise_exception=True):
+                            loca_serializer.save()
+                            client_sock.sendall('Route success!!'.encode())
+                        else:
+                            pass
+            
+                else:
+                    print('경로 좌표')
+                    # if device_info in Device_List:
+                    print('저장완료')
+                    now_device = get_object_or_404(Device, serial_num=int(device_info))
+                    now_user = get_object_or_404(User, connected_device=now_device) # 이부분 맞는지 확인
+                    route_serializer = RouteSerializer(route_file=json_info, device_seq=now_device, user_seq=now_user)
+                    client_sock.sendall('Location success!!'.encode())
             except KeyError:
+                print('에러')
                 continue
 
-            if num_of_frames_info != 1:
-                print('경로 좌표')
-                if device_info in db:
-                    print('저장완료')
-                    loca_serializer = LocationSerializer(loca_file=json_info, is_quiz=0)
-                    if loca_serializer.is_valid(raise_exception=True):
-                        loca_serializer.save()
-                        client_sock.sendall('Route success!!'.encode())
-                    else:
-                        pass
+            # if num_of_frames_info != 1:
+            #     print('경로 좌표')
+            #     if device_info in Device_List:
+            #         print('저장완료')
+            #         loca_serializer = LocationSerializer(loca_file=json_info, is_quiz=0)
+            #         if loca_serializer.is_valid(raise_exception=True):
+            #             loca_serializer.save()
+            #             client_sock.sendall('Route success!!'.encode())
+            #         else:
+            #             pass
             
-            else:
-                print('루트 좌표')
-                if device_info in db:
-                    print('저장완료')
-                    client_sock.sendall('Location success!!'.encode())
+            # else:
+            #     print('루트 좌표')
+            #     if device_info in Device_List:
+            #         print('저장완료')
+            #         client_sock.sendall('Location success!!'.encode())
 
             
 

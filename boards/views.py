@@ -17,13 +17,10 @@ def boardlist(request):
     if request.method == 'GET':
         boards = Board.objects.filter(is_deleted=False)
         serializer = BoardListSerializer(boards, many=True)
-        message_queue.put('성공')
-        print(request.user)
         return Response(serializer.data)
     
     elif request.method == 'POST':
         print(request.data)
-        print('[POST]요청은 들어옴')
         serializer = BoardSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             serializer.save(user_seq=request.user)

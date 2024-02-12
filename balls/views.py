@@ -13,7 +13,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticate
 
 from A202.settings import message_queue
 
-# Create your views here.
+# 공 좌표 정보
 @api_view(['GET'])
 @permission_classes([IsAuthenticatedOrReadOnly])
 def ball_location(request, loca_seq):
@@ -23,6 +23,7 @@ def ball_location(request, loca_seq):
     return Response(serializer.data)
 
 
+# 퀴즈 공 좌표 정보
 @api_view(['GET'])
 @permission_classes([IsAuthenticatedOrReadOnly])
 def quizball(request, quiz_num):
@@ -32,6 +33,7 @@ def quizball(request, quiz_num):
     return Response(serializer.data)
 
 
+# 퀴즈 정답 정보
 @api_view(['GET'])
 @permission_classes([IsAuthenticatedOrReadOnly])
 def quiz_answer(request, quiz_num):
@@ -48,8 +50,10 @@ def quiz_answer(request, quiz_num):
     else:
         return Response({'message': 'No Quiz'}, status=404)
 
+
+# 내가 친 경로 
 @api_view(['GET'])
-# @permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated]) # -----> 수정함
 def my_history_route(request, username):
     user = get_object_or_404(User, username=username)
     user_id = user.pk
@@ -66,10 +70,13 @@ def ball_to_device(request):
         sign_data = request.data['sign']
         if sign_data == '0':
             print('녹화 시작')
-            message_queue.put('0큐에서 전송 성공')
+            message = '녹화시작하는 메세지'
+            message_queue.put(message)
             return JsonResponse({"message": "Received sign data successfully."})
         else:
             print('사용 종료')
+            message = '녹화종료하는 메세지'
+            message_queue.put(message)
             return JsonResponse({"message": "Received sign data successfully."})
     elif 'route_seq' in request.data:
         print(f'기기에 경로 다시보기 좌표 전송')

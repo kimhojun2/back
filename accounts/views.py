@@ -17,7 +17,11 @@ class customlogin(LoginView):
         user = self.request.user
         response.data['user_seq'] = user.pk
         response.data['username'] = user.username
-        print(response.data)
+        # print(response.data)
+        # print(request.data)
+        now_user = get_object_or_404(User, username=request.data['username'])
+        now_user.connected_device = request.data['device_seq']
+        now_user.save()
         return response
 
 
